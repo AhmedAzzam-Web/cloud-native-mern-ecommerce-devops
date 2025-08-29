@@ -9,7 +9,7 @@ function ProductInfo() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch(`http://localhost:3002/products/${productID}`, {
+        const response = await fetch(`${import.meta.env.VITE_PRODUCT_SERVICE_URL || 'http://localhost:9000'}/products/${productID}`, {
           headers: {
             "Content-Type": "application/json",
           },
@@ -29,7 +29,7 @@ function ProductInfo() {
     const token = localStorage.getItem("token");
     if (token) {
       console.log("Add to cart");
-      fetch(`http://localhost:3003/cart/${productID}`, {
+      fetch(`${import.meta.env.VITE_CART_SERVICE_URL || 'http://localhost:9003'}/cart/${productID}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

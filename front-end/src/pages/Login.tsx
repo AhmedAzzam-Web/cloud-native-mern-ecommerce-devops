@@ -6,11 +6,10 @@ function Login() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     try {
-      const response = await fetch("http://localhost:3001/users/login", {
+      const response = await fetch(`${import.meta.env.VITE_USER_SERVICE_URL || 'http://localhost:9001'}/users/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -24,7 +23,7 @@ function Login() {
         response.json().then((data) => {
           window.location.href = "/";
           console.log(data);
-          localStorage.setItem("token", data);
+          localStorage.setItem("token", data.token);
           localStorage.setItem("user", JSON.stringify(data.user));
         });
       } else {

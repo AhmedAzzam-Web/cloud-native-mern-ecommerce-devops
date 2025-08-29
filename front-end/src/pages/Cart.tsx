@@ -18,7 +18,7 @@ function Cart() {
           return;
         }
 
-        const response = await fetch("http://localhost:3003/cart", {
+        const response = await fetch(`${import.meta.env.VITE_CART_SERVICE_URL || 'http://localhost:9003'}/cart`, {
           headers: {
             "Content-Type": "application/json",
             "Authorization": "Bearer " + token,

@@ -15,15 +15,16 @@ function Profile() {
   const [user, setUser] = useState({});
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (token) {
-      fetch("http://localhost:3001/users/", {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      }).then((response) => {
+  const token = localStorage.getItem("token");
+  if (token) {
+    fetch(`${import.meta.env.VITE_USER_SERVICE_URL || 'http://localhost:9001'}/users/profile`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    })
+      .then((response) => {
         if (response.ok) {
           response.json().then((data) => {
             setUser(data);
@@ -31,11 +32,15 @@ function Profile() {
         } else {
           window.location.href = "/login";
         }
+      })
+      .catch(() => {
+        window.location.href = "/login";
       });
-    } else {
-      window.location.href = "/login";
-    }
-  }, []);
+  } else {
+    window.location.href = "/login";
+  }
+}, []);
+
 
 
   // var image = profile;

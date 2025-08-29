@@ -10,11 +10,10 @@ function Register() {
   const [password, setPassword] = useState("");
   const [confpassword, setconfPassword] = useState("");
 
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     try {
-      const response = await fetch("http://localhost:3001/users", {
+      const response = await fetch(`${import.meta.env.VITE_USER_SERVICE_URL || 'http://localhost:9001'}/users`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
@@ -52,7 +51,7 @@ function Register() {
     <div className="bg-img">
       <div className="registerContent">
         <header>Register Form</header>
-        <form action="http://localhost:3001/users" method="post" onSubmit={handleSubmit}>
+        <form action={`${import.meta.env.VITE_USER_SERVICE_URL || 'http://localhost:9001'}/users`} method="post" onSubmit={handleSubmit}>
           <div className="row">
             <div className="col">
               <h6>First name</h6>
