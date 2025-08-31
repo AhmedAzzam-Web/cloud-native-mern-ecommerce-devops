@@ -2,22 +2,39 @@ const mongoose = require('mongoose');
 const redis = require('redis');
 require('dotenv').config();
 
-const redisClient = redis.createClient();
-
-// Promisify Redis functions for async/await usage
-// const getAsync = promisify(redisClient.get).bind(redisClient);
-// const setAsync = promisify(redisClient.set).bind(redisClient);
+// Redis client configuration
+let redisClient;
+try {
+  if (process.env.REDIS_URL) {
+    redisClient = redis.createClient({ url: process.env.REDIS_URL });
+  } else {
+    redisClient = redis.createClient();
+  }
+} catch (error) {
+  console.log('Redis connection failed:', error.message);
+}
 
 const mongo_username = process.env.MONGO_USERNAME;
 const mongo_password = process.env.MONGO_PASSWORD;
 const mongo_cluster = process.env.MONGO_CLUSTER;
 const mongo_database = process.env.MONGO_DBNAME;
 
+// Determine MongoDB connection string based on environment
+let mongoConnectionString;
+if (process.env.NODE_ENV === 'production' && mongo_cluster && mongo_cluster.includes('mongodb.net')) {
+  // Production: MongoDB Atlas
+  mongoConnectionString = `mongodb+srv://${mongo_username}:${mongo_password}@${mongo_cluster}/${mongo_database}?retryWrites=true&w=majority`;
+} else {
+  // Development: Local MongoDB
+  mongoConnectionString = `mongodb://${mongo_username}:${mongo_password}@${mongo_cluster}/${mongo_database}?authSource=admin`;
+}
 
-mongoose.connect(`mongodb+srv://${mongo_username}:${mongo_password}@${mongo_cluster}/${mongo_database}?retryWrites=true&w=majority`
-, { useNewUrlParser: true, useUnifiedTopology: true })
-.then(() => console.log(`Connected to: ${mongoose.connection.name}`))
-.catch(err => console.log(err));
+mongoose.connect(mongoConnectionString, { 
+  useNewUrlParser: true, 
+  useUnifiedTopology: true 
+})
+.then(() => console.log(`Connected to MongoDB: ${mongoose.connection.name}`))
+.catch(err => console.log('MongoDB connection error:', err));
 
 
 

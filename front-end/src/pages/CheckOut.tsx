@@ -11,21 +11,27 @@ function submitHandler(){
   const token = localStorage.getItem("token");
 
   if (token) { 
-    fetch("http://localhost:3003/cart/checkout", {
-      method: "DELETE",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": "Bearer " + token
-      },
-    }).then((response) => {
-      if (response.ok) {
-        response.json().then((data) => {
-          console.log(data);
+    const handleCheckout = async () => {
+      try {
+        fetch(`${import.meta.env.VITE_CART_SERVICE_URL || 'http://localhost:9003'}/cart/checkout`, {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer " + token
+          },
+        }).then((response) => {
+          if (response.ok) {
+            response.json().then((data) => {
+              console.log(data);
+            });
+          } else {
+            console.log("Error");
+          }
         });
-      } else {
-        console.log("Error");
+      } catch (error) {
+        console.error("Error checking out:", error);
       }
-    });
+    };
   } else {
     window.location.href = "/login";
   }

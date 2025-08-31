@@ -1,20 +1,114 @@
-version: '3'
 services:
-  user:
-    image: user
+  mongodb:
+    image: mongo:7.0
+    container_name: mongodb
+    restart: unless-stopped
     ports:
-      - "3001:3001"
-    command: node server.js
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password123
+      MONGO_INITDB_DATABASE: ecommerce
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - app-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    networks:
+      - app-network
+
+  user:
+    build: ./User
+    container_name: user-service
+    restart: unless-stopped
+    ports:
+      - "9001:9001"
+    environment:
+      - NODE_ENV=development
+      - MONGO_USERNAME=admin
+      - MONGO_PASSWORD=password123
+      - MONGO_CLUSTER=mongodb:27017
+      - MONGO_DBNAME=ecommerce
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=password123
+      - ACCESS_TOKEN=jwt_key
+    depends_on:
+      - mongodb
+      - redis
+    networks:
+      - app-network
+    command: npm run dev
 
   cart:
-    image: cart
+    build: ./Cart
+    container_name: cart-service
+    restart: unless-stopped
     ports:
-      - "3003:3003"
-    command: node server.js  
+      - "9003:9003"
+    environment:
+      - NODE_ENV=development
+      - MONGO_USERNAME=admin
+      - MONGO_PASSWORD=password123
+      - MONGO_CLUSTER=mongodb:27017
+      - MONGO_DBNAME=ecommerce
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - mongodb
+      - redis
+    networks:
+      - app-network
+    command: npm run dev
 
   product:
-    image: product
+    build: ./Product
+    container_name: product-service
+    restart: unless-stopped
     ports:
-      - "3002:3002"
-    command: node server.js
-    
+      - "9000:9000"
+    environment:
+      - NODE_ENV=development
+      - MONGO_USERNAME=admin
+      - MONGO_PASSWORD=password123
+      - MONGO_CLUSTER=mongodb:27017
+      - MONGO_DBNAME=ecommerce
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - mongodb
+      - redis
+    networks:
+      - app-network
+    command: npm run dev
+
+  frontend:
+    build: ./front-end
+    container_name: frontend
+    restart: unless-stopped
+    ports:
+      - "5173:5173"
+    environment:
+      - NODE_ENV=development
+      - VITE_API_BASE_URL=http://localhost
+      - VITE_USER_SERVICE_URL=http://localhost:9001
+      - VITE_PRODUCT_SERVICE_URL=http://localhost:9000
+      - VITE_CART_SERVICE_URL=http://localhost:9003
+    depends_on:
+      - user
+      - product
+      - cart
+    networks:
+      - app-network
+    command: npm run dev -- --host 0.0.0.0
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  mongodb_data:
+  

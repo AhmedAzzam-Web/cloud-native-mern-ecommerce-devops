@@ -1,11 +1,15 @@
-FROM node
+FROM node:18-alpine
 
 WORKDIR /app
 
-COPY . /app
+ENV NODE_ENV=development
 
-EXPOSE 3001:3001
+COPY package*.json ./
 
-RUN npm install
+RUN npm ci
 
-CMD npm run dev
+COPY . .
+
+EXPOSE 9001
+
+CMD ["npm", "run", "dev"]
