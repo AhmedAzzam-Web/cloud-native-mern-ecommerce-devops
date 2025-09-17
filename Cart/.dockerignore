@@ -7,3 +7,10 @@ README.md
 .nyc_output
 coverage
 .DS_Store
+*.log
+*.tsbuildinfo
+.vscode/
+.idea/
+*.md
+tests/
+docs/
