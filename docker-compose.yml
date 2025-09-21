@@ -24,7 +24,9 @@ services:
       - app-network
 
   user:
-    build: ./User
+    build: 
+      context: ./User
+      target: dev
     container_name: user-service
     restart: unless-stopped
     ports:
@@ -46,7 +48,9 @@ services:
     command: npm run dev
 
   cart:
-    build: ./Cart
+    build: 
+      context: ./Cart
+      target: dev
     container_name: cart-service
     restart: unless-stopped
     ports:
@@ -66,7 +70,9 @@ services:
     command: npm run dev
 
   product:
-    build: ./Product
+    build: 
+      context: ./Product
+      target: dev
     container_name: product-service
     restart: unless-stopped
     ports:
@@ -86,7 +92,9 @@ services:
     command: npm run dev
 
   frontend:
-    build: ./front-end
+    build: 
+      context: ./front-end
+      target: dev
     container_name: frontend
     restart: unless-stopped
     ports:
