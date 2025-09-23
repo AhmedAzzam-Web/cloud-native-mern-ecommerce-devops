@@ -10,6 +10,13 @@ terraform {
       version = ">= 3.5.0"
     }
   }
+
+  backend "azurerm" {
+    resource_group_name  = "tfstate"
+    storage_account_name = "tfstate_prod_infrastructure"
+    container_name       = "tfstate"
+    key                  = "prod.terraform.tfstate" # you decide this value not default to a name haha, save the state in this file
+  }
 }
 
 provider "azurerm" {
