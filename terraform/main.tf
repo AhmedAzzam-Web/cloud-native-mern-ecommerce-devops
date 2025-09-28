@@ -22,8 +22,8 @@ resource "azurerm_resource_group" "rg" {
 
 # Create a virtual network and subnets
 module "vnet" {
-  source = "Azure/avm-res-network-virtualnetwork/azurerm"
-
+  source              = "Azure/avm-res-network-virtualnetwork/azurerm"
+  version             = "0.10.0"
   name                = "vnet-${var.project_name}-${local.suffix}"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
