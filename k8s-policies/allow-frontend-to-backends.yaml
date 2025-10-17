@@ -1,0 +1,46 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-frontend-to-backends
+  namespace: prod
+spec:
+  podSelector:
+    matchLabels:
+      app: frontend
+      namespace: prod
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              name: user
+          namespaceSelector:
+            matchLabels:
+              name: prod
+      ports:
+        - protocol: TCP
+          port: 9001
+
+    - to:
+        - podSelector:
+            matchLabels:
+              name: cart
+          namespaceSelector:
+            matchLabels:
+              name: prod
+      ports:
+        - protocol: TCP
+          port: 9003
+
+    - to:
+        - podSelector:
+            matchLabels:
+              name: product
+          namespaceSelector:
+            matchLabels:
+              name: prod
+      ports:
+        - protocol: TCP
+          port: 9000
+

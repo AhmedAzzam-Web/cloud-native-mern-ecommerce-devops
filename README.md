@@ -1,97 +1,139 @@
-# E-Commerce Web Application using MERN Stack and Microservices Architecture
+# Cloud-Native E-Commerce Platform on Azure with MERN & Microservices
 
-## Description
+## Project Transformation & Cloud Architecture
 
-This is a web application for an e-commerce store that sells games. It is built using the MERN stack and Microservices Architecture. It has a user interface for the customers to view the products and add them to their cart. The application is built using the Microservices Architecture, where each service is a separate Node.js application.
+This repository forks a MERN e-commerce application and completely re-architects it for a production-grade deployment on Microsoft Azure. My contributions focus on building a secure, scalable, and fully automated cloud-native infrastructure from the ground up using modern DevOps principles and enterprise-level security.
 
-## Installation
+## Infrastructure & Security Architecture
 
-Use the package manager [npm](https://www.npmjs.com/) to install dependencies.
+This project has been transformed from a standard MERN application into a secure, scalable, and automated cloud-native system ready for production on Microsoft Azure. The infrastructure implements enterprise-grade security, high availability, and zero-trust networking principles using Infrastructure as Code (IaC), containerization, and Kubernetes orchestration.
 
-```bash
-npm install
-```
+![Architecture Diagram](docs/images/k8s-policies.drawio.png)
+_Figure 1: a zero-trust networking model is enforced within AKS, ensuring all services are private by default_
 
-## Usage
+### Key Features & Technologies
 
-1. Create a .env file in the root directory and add the following environment variables (replace all #### with your own values):
+- **Infrastructure as Code (IaC)** with Terraform for declarative infrastructure management
+- **Production-Grade Containerization** with Docker multistage builds and distroless images
+- **Secure Orchestration** on Azure Kubernetes Service (AKS) with private cluster configuration
+- **End-to-End Security** with Private Link and Zero-Trust Networking
+- **Automated Secret Management** with Azure Key Vault and Workload Identity
+- **High Availability and Scalability** by design with auto-scaling and multi-zone deployment
+- **Network Segmentation** with Kubernetes Network Policies and Azure CNI
+- **Disaster Recovery** with geo-redundant Cosmos DB and automated backups
 
-```bash
-PORT=####
-MONGO_USERNAME=####
-MONGO_PASSWORD=####
-MONGO_CLUSTER=####
-MONGO_DBNAME=####
-ACCESS_TOKEN=####
-```
+### Infrastructure as Code (Terraform)
 
-2. Run the following command to start the application:
+The entire Azure infrastructure is defined declaratively using Terraform, ensuring consistency, reproducibility, and version control. The implementation features:
 
-```bash
-npm run dev
-```
+- **Secure Remote Backend**: Terraform state is stored in Azure Storage with private access, ensuring state security and team collaboration
+- **Modular Architecture**: Professional structure with reusable modules for networking, private endpoints, and core services
+- **Resource Organization**: Clear separation of concerns with dedicated modules for VNet, AKS, private endpoints, and PaaS services
 
-3. Open the following URL in your browser:
+### Containerization (Docker)
 
-```bash
-http://localhost:<port_no>/
-```
+The application follows containerization best practices with a multi-service architecture:
 
-4. Or you can use docker-compose to run the application:
+- **Multistage Builds**: Optimized production images with minimal attack surface
+- **Distroless Images**: Node.js backend services use Google's distroless base images for enhanced security
+- **Lightweight Frontend**: React application served via Nginx for optimal performance
+- **Security Hardening**: Non-root user execution and minimal dependencies in production containers
+- **Health Checks**: Built-in container health monitoring for Kubernetes orchestration
 
-```bash
-docker-compose up
-```
+### Orchestration (Azure Kubernetes Service - AKS)
 
-5. Show the running containers:
+The containerized services are deployed on a production-hardened AKS cluster with enterprise-grade configuration:
 
-```bash
-docker ps
-```
+- **Private Cluster**: Kubernetes API server is not exposed to the public internet
+- **Dual Node Pools**:
+  - System node pool for critical cluster services (tainted for system pods only)
+  - User node pool for application workloads with auto-scaling capabilities
+- **Azure CNI Networking**: Pods receive IP addresses directly from the VNet subnet (didn't need to create overlay pod_cidr since I have a huge pool of IPs available)
+- **Workload Identity**: Secure authentication between pods and Azure services through service account
+- **Horizontal Pod Autoscaler (HPA)**: Automatic scaling based on CPU and memory metrics
+- **Pod Disruption Budgets**: Ensures service availability during maintenance operations
 
-6. Get the container ip address:
+![Workload Identity](<docs/images/AKS Integration with Azure-Key-Vault.drawio.png>)
+_Figure 2: Workload Identity - Secure AKS Integration with Azure Key Vault and Private Link Services_
 
-```bash
-docker inspect <container_id> | grep "IPAddress"
-```
+### Security Posture (Zero-Trust by Design)
 
-7. Open the following URL in your browser:
+The infrastructure implements a comprehensive zero-trust security model:
 
-```bash
-http://<container_ip_address>:<port_no>/
-```
+#### Private Network Architecture
 
-8. To run the frontend application, run the following command:
+- **Isolated VNet**: All resources operate within a private Azure Virtual Network
+- **Subnet Segmentation**: Dedicated subnets for AKS, applications, private endpoints, and bastion services
+- **Private AKS Cluster**: Kubernetes API server accessible only through private endpoints
+- **Azure Bastion**: Secure administrative access without exposing management ports
 
-```bash
-cd frontend
-npm install
-npm run dev
-```
+#### Private Link Integration
 
-9. Open the following URL in your browser:
+- **Private Endpoints**: All Azure PaaS services (ACR, Cosmos DB, Redis Cache, Key Vault) accessible only through private IP addresses
+- **Private DNS Zones**: Automatic DNS resolution to private endpoints, ensuring no public internet exposure
+- **Azure Backbone**: All inter-service communication traverses Microsoft's private network infrastructure
 
-```bash
-http://localhost:5173/
-```
+#### Secret Management
 
-## Products json file
+- **Azure Key Vault**: Centralized secret storage with encryption at rest and in transit
+- **Secrets Store CSI Driver**: Kubernetes-native secret injection without storing secrets in etcd
+- **Workload Identity**: Fine-grained Azure AD authentication for pods to access Key Vault
+- **Automatic Secret Rotation**: Built-in secret rotation capabilities for enhanced security
 
-- [Products json file](https://github.com/Andrewaziz99/E-Commerce_Web_Application/blob/main/products.json)
+#### Zero-Trust Networking
 
-## Technologies
+- **Kubernetes Network Policies**: Deny-by-default network segmentation at the pod level
+- **Micro-segmentation**: Explicit allow rules for required communication paths only
+- **Service-to-Service Authentication**: Secure communication between microservices
+- **DNS-based Service Discovery**: Internal service resolution without external dependencies
 
-- [React vite](https://vitejs.dev/)
-- [Node.js](https://nodejs.org/en/)
-- [Express](https://expressjs.com/)
-- [MongoDB](https://www.mongodb.com/)
-- [Docker](https://www.docker.com/)
-- [Docker Compose](https://docs.docker.com/compose/)
-- [Microservices Architecture]()
+### How to Deploy
+
+The infrastructure deployment follows a two-step process:
+
+1. **Bootstrap the Terraform Backend** (one-time setup):
+
+   ```bash
+   cd terraform
+   terraform init
+   terraform apply
+   ```
+
+2. **Deploy the Main Infrastructure**:
+   ```bash
+   cd terraform
+   terraform init
+   terraform plan
+   terraform apply
+   ```
+
+The deployment will provision:
+
+- Azure Resource Group and Virtual Network
+- Private AKS cluster with dual node pools
+- Azure Container Registry with private access
+- Cosmos DB for MongoDB with geo-replication
+- Redis Cache for session management
+- Azure Key Vault for secret management
+- Private endpoints for all PaaS services
+- Kubernetes manifests for application deployment
+
+### Technology Stack
+
+| Application Stack    | Infrastructure & DevOps Stack |
+| :------------------- | :---------------------------- |
+| React (Vite)         | Microsoft Azure               |
+| Node.js / Express.js | Terraform (IaC)               |
+| MongoDB              | Kubernetes (AKS)              |
+|                      | Docker & Nginx                |
+|                      | Azure Key Vault               |
+|                      | Azure Private Link            |
+|                      | GitHub Actions (CI/CD)        |
 
 ## Contributers
 
-- [Thomas Maged](https://github.com/Thomas-Maged)
+- [Ahmed Azzam](https://github.com/AhmedAzzam-Web)
+- [Thomas Maged](https://github.com/Tomas-Maged)
 - [Maximous Atef](https://github.com/Maxiatef)
 - [Kirollos Nessim](https://github.com/KirollosNessem)
 - [Ramez Hesham](https://github.com/RamezHesham)

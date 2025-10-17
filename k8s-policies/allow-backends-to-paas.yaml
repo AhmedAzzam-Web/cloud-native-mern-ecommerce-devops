@@ -1,0 +1,36 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-backends-to-paas-services
+  namespace: prod
+spec:
+  # any pod with the label 'app=user' or 'app=product'.
+  podSelector:
+    matchExpressions:
+      - key: app
+        operator: In
+        values: ["user", "product"]
+  policyTypes:
+  - Egress
+  egress:
+  # Allow traffic to the Private Endpoints subnet.
+  - to:
+    - ipBlock:
+        # private-endpoints subnet from main.tf
+        cidr: 10.0.2.0/24
+    # sufficient to trust the subnet, but specifying ports for extra security.
+    ports:
+    - protocol: TCP
+      port: 6379 # Redis
+    - protocol: TCP
+      port: 10255 # Cosmos DB
+
+  # Rule 2: You must ALSO still allow DNS traffic for these pods.
+  - to:
+    - namespaceSelector: {}
+      podSelector:
+        matchLabels:
+          k8s-app: kube-dns
+    ports:
+    - protocol: UDP
+      port: 53

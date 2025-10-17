@@ -26,26 +26,31 @@ variable "acr_sku" {
 variable "aks_system_node_count" {
   type        = number
   description = "The initial quantity of nodes for the node pool."
-  default     = 1
+  default     = 2
 }
-
-variable "aks_user_node_count" {
+variable "aks_user_node_min_count" {
   type        = number
   description = "The initial quantity of nodes for the node pool."
-  default     = 2
+  default     = 3
+}
+variable "aks_user_node_max_count" {
+  type        = number
+  description = "The initial quantity of nodes for the node pool."
+  default     = 6
 }
 
 variable "aks_system_node_size" {
   description = "Node size the smallest for cost"
   type        = string
-  # Standard_DS2_v2 ~1 vCPU/2GB; economical for small workloads
+  # ~1 vCPU/2GB; economical for small workloads
   default = "Standard_B1s"
 }
 
 variable "aks_user_node_size" {
   description = "Node size the smallest for cost"
   type        = string
-  # Standard_B2s ~2 vCPU/4GB; economical for small workloads
+  # 2vCPU/4GB; after OS and kubelet overhead, get 1.46 vCPUs, 3.71 GiB RAM; min 3 nodes: 5.18 vCPUs, 11.13 GiB RAM
+  # total memory needed for pods: 6.75 GiB , total cpu needed for pods: 3.6 vCPUs , SLA is good
   default = "Standard_B2s"
 }
 

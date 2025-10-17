@@ -1,0 +1,13 @@
+When a product pod wants to connect to Cosmos DB, here's what happens:
+
+The pod makes a DNS query for cosmosdb.documents.azure.com.
+
+VNet is linked to the Private DNS Zone, the query is intercepted, and instead of returning a public IP, it returns the private IP of the Cosmos DB Private Endpoint (example 10.0.2.5).
+
+The pod attempts to send traffic to 10.0.2.5.
+
+The Azure CNI Network Policy checks the rules applied to the product pod.
+
+It finds the allow-backends-to-paas policy, which has an egress rule allowing traffic to the 10.0.2.0/24 IP block.
+
+Since 10.0.2.5 is within 10.0.2.0/24, the rule matches, and the traffic is allowed to flow to the Private Endpoint.

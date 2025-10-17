@@ -1,0 +1,13 @@
+# Protects the deployment from being disrupted by terminating pods during downtime or maintenance
+
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: user-deployment
+  namespace: prod
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: user
+      app.kubernetes.io/component: user_profile
