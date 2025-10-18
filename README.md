@@ -4,10 +4,6 @@
 
 This repository forks a MERN e-commerce application and completely re-architects it for a production-grade deployment on Microsoft Azure. My contributions focus on building a secure, scalable, and fully automated cloud-native infrastructure from the ground up using modern DevOps principles and enterprise-level security.
 
-## Infrastructure & Security Architecture
-
-This project has been transformed from a standard MERN application into a secure, scalable, and automated cloud-native system ready for production on Microsoft Azure. The infrastructure implements enterprise-grade security, high availability, and zero-trust networking principles using Infrastructure as Code (IaC), containerization, and Kubernetes orchestration.
-
 ![Architecture Diagram](docs/images/k8s-policies.drawio.png)
 _Figure 1: a zero-trust networking model is enforced within AKS, ensuring all services are private by default_
 
