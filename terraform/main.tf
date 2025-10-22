@@ -151,9 +151,8 @@ resource "azurerm_kubernetes_cluster" "aks" {
     only_critical_addons_enabled = true # will taint default node pool with CriticalAddonsOnly=true:NoSchedule meanning no other pods can be scheduled on it
     # pool rotation: if a propery that forces recreation of the cluster changed, node pods will be moved over to pool_rotation ensuring minimal downtime and delete the old pool 
     temporary_name_for_rotation = "pool_rotation"
-    orchestrator_version        = var.aks_config.orchestrator_version
-    node_count                  = var.aks_config.aks_system_node_count
-    vm_size                     = var.aks_config.aks_system_node_size
+    node_count                  = var.aks_system_node_count
+    vm_size                     = var.aks_system_node_size
     vnet_subnet_id              = module.vnet.subnets["aks"].resource_id
     type                        = "VirtualMachineScaleSets"
     os_disk_size_gb             = 15
