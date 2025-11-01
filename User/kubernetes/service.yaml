@@ -3,15 +3,11 @@ kind: Service
 metadata:
   name: user-service
   namespace: prod
-  # Other vnet resrouces need to access user-service so Internal LoadBalancer is needed  but the service still not exposed to the internet
-  annotations: 
-    service.beta.kubernetes.io/azure-load-balancer-internal: "true"
-    service.beta.kubernetes.io/azure-load-balancer-internal-subnet: "app"
   labels:
     app: user
     app.kubernetes.io/component: user_profile
 spec:
-  type: LoadBalancer
+  type: ClusterIP
   selector:
     app: user
     app.kubernetes.io/component: user_profile

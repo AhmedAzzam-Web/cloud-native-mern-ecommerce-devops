@@ -109,7 +109,7 @@ resource "azurerm_container_registry" "acr" {
   }
 
   encryption {
-    key_vault_key_id   = azurerm_key_vault_key.registry_uai_key.id
+    key_vault_key_id   = azurerm_key_vault_key.registry_uai_key.versionless_id // versionless_id : ACR will use the latest version of the key which means automatic rotation of the key
     identity_client_id = azurerm_user_assigned_identity.registry_uai.client_id
   }
 
@@ -196,15 +196,18 @@ resource "azurerm_kubernetes_cluster" "aks" {
   }
 }
 
-resource "azurerm_private_dns_zone" "aks_private_dns_zone" {
-  name                = "privatelink.${azurerm_resource_group.rg.location}.azmk8s.io"
-  resource_group_name = azurerm_resource_group.rg.name
-}
-resource "azurerm_private_dns_zone_virtual_network_link" "aks_dns_link" {
-  name                  = "aks-vnet-link"
-  resource_group_name   = azurerm_resource_group.rg.name
-  private_dns_zone_name = azurerm_private_dns_zone.aks_private_dns_zone.name
-  virtual_network_id    = azurerm_virtual_network.vnet.id
+module "pe_aks" {
+  source                         = "./modules/private_endpoint"
+  service_name                   = "aks"
+  suffix                         = local.suffix
+  location                       = azurerm_resource_group.rg.location
+  resource_group_name            = azurerm_resource_group.rg.name
+  subnet_id                      = module.vnet.subnets["private-endpoints"].resource_id
+  private_connection_resource_id = azurerm_kubernetes_cluster.aks.id
+  subresource_name               = "aks"
+  # search about it
+  private_dns_zone_name = "privatelink.${azurerm_resource_group.rg.location}.azmk8s.io"
+  virtual_network_id    = module.vnet.resource_id
 }
 
 # This pool for app pods.
@@ -341,34 +344,6 @@ module "pe_acr" {
   virtual_network_id             = module.vnet.resource_id
 }
 
-# private endpoint for redis
-module "pe_redis" {
-  source                         = "./modules/private_endpoint"
-  service_name                   = "redis"
-  suffix                         = local.suffix
-  location                       = azurerm_resource_group.rg.location
-  resource_group_name            = azurerm_resource_group.rg.name
-  subnet_id                      = module.vnet.subnets["private-endpoints"].resource_id
-  private_connection_resource_id = azurerm_redis_cache.redis.id
-  subresource_name               = "redis"
-  private_dns_zone_name          = "privatelink.redis.cache.windows.net"
-  virtual_network_id             = module.vnet.resource_id
-}
-
-# private endpoint for cosmosdb
-module "pe_cosmosdb" {
-  source                         = "./modules/private_endpoint"
-  service_name                   = "cosmosdb"
-  suffix                         = local.suffix
-  location                       = azurerm_resource_group.rg.location
-  resource_group_name            = azurerm_resource_group.rg.name
-  subnet_id                      = module.vnet.subnets["private-endpoints"].resource_id
-  private_connection_resource_id = azurerm_cosmosdb_account.acc.id
-  subresource_name               = "cosmosdb"
-  private_dns_zone_name          = "privatelink.documents.azure.com"
-  virtual_network_id             = module.vnet.resource_id
-}
-
 # Steps to securly access Azure Key Vault and grant AKS access to the secrets
 # Enable CSI Driver for Azure Key Vault -> 
 
@@ -380,6 +355,8 @@ resource "azurerm_key_vault" "kv" {
   tenant_id                     = data.azurerm_client_config.current.tenant_id
   sku_name                      = "standard"
   public_network_access_enabled = false
+  purge_protection_enabled      = true # prevent the secret from being deleted permenantly even by admins, for compliance purposes
+  soft_delete_retention_days    = 90   # retain the deleted key vault for 90 days
 }
 
 resource "azurerm_key_vault_secret" "cosmos_conn" {
@@ -416,4 +393,46 @@ resource "azurerm_federated_identity_credential" "app_fic" {
   parent_id           = azurerm_user_assigned_identity.app_identity.id
   # Service Account my-prod-sa issues an OIDC token when the pod starts
   subject = "system:serviceaccount:${local.namespace}:${local.service_account_name}"
+}
+
+
+######## private endpoints with prizate DNS zone for retrieving private ip addresses without going out to the internet
+module "pe_redis" {
+  source                         = "./modules/private_endpoint"
+  service_name                   = "redis"
+  suffix                         = local.suffix
+  location                       = azurerm_resource_group.rg.location
+  resource_group_name            = azurerm_resource_group.rg.name
+  subnet_id                      = module.vnet.subnets["private-endpoints"].resource_id
+  private_connection_resource_id = azurerm_redis_cache.redis.id
+  subresource_name               = "redis"
+  private_dns_zone_name          = "privatelink.redis.cache.windows.net"
+  virtual_network_id             = module.vnet.resource_id
+}
+
+# private endpoint for cosmosdb
+module "pe_cosmosdb" {
+  source                         = "./modules/private_endpoint"
+  service_name                   = "cosmosdb"
+  suffix                         = local.suffix
+  location                       = azurerm_resource_group.rg.location
+  resource_group_name            = azurerm_resource_group.rg.name
+  subnet_id                      = module.vnet.subnets["private-endpoints"].resource_id
+  private_connection_resource_id = azurerm_cosmosdb_account.acc.id
+  subresource_name               = "cosmosdb"
+  private_dns_zone_name          = "privatelink.documents.azure.com"
+  virtual_network_id             = module.vnet.resource_id
+}
+
+module "pe_kv" {
+  source                         = "./modules/private_endpoint"
+  service_name                   = "key_vault"
+  suffix                         = local.suffix
+  location                       = azurerm_resource_group.rg.location
+  resource_group_name            = azurerm_resource_group.rg.name
+  subnet_id                      = module.vnet.subnets["private-endpoints"].resource_id
+  private_connection_resource_id = azurerm_key_vault.kv.id
+  subresource_name               = "key_vault"
+  private_dns_zone_name          = "privatelink.vaultcore.azure.net"
+  virtual_network_id             = module.vnet.resource_id
 }

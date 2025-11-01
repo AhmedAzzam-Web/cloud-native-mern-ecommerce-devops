@@ -22,8 +22,8 @@ terraform {
 provider "azurerm" {
   features {
     key_vault {
-      purge_soft_deleted_secrets_on_destroy = true
-      recover_soft_deleted_secrets          = true
+      purge_soft_deleted_secrets_on_destroy = true // purge means delete the secret from the key vault permenantly
+      recover_soft_deleted_secrets          = true // when we delete a secret, it just gets soft deleted and we can recover it later
     }
   }
 }

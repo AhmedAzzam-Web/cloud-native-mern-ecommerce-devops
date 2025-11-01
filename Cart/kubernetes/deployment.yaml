@@ -1,0 +1,76 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cart-deployment
+  namespace: prod
+  labels:
+    app: cart
+    app.kubernetes.io/component: cart
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: cart # for ingress & egress control (network policy)
+      app.kubernetes.io/component: cart
+  template:
+    metadata:
+      labels:
+        app: cart
+        app.kubernetes.io/component: cart
+    spec:
+      serviceAccountName: prod-sa # Use the Service Account linked to the Azure Identity
+      containers:
+        - name: cart
+          image: REPLACE_WITH_ACR/cart:REPLACE_WITH_TAG
+
+          env:
+            - name: REDIS_CONNECTION_STRING_PATH
+              value: "/mnt/secrets-store/redis-conn-string" # Pass the file path as an env var
+            - name: COSMOS_CONNECTION_STRING_PATH
+              value: "/mnt/secrets-store/cosmos-conn-string" # Pass the file path as an env var
+          volumeMounts: # volume inside the pod
+            - name: secrets-volume
+              mountPath: "/mnt/secrets-store"
+              readOnly: true
+
+          ports:
+            - containerPort: 9001
+
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "300m"
+            limits:
+              memory: "900Mi"
+              cpu: "450m"
+
+          # liveness and readiness probes do not start until startup succeeds to not cause interference
+          startupProbe:
+            httpGet:
+              path: /healthz
+              port: 9001
+
+          readinessProbe: # know when a container is ready to start accepting traffic
+            httpGet:
+              path: /healthz
+              port: 9001
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 3
+
+          livenessProbe: # indicate unrecoverable application failure, for example a deadlock.
+            httpGet:
+              path: /healthz
+              port: 9001
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            failureThreshold: 3 # This ensures the pods is observed as a not ready for a period of time before it's hard killed
+      # the CSI stores remote data as a volume for the pod, it doesn't save new data itself as normal volumes
+      volumes:
+        - name: secrets-volume
+          csi:
+            driver: secrets-store.csi.x-k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: "azure-kv-secrets" # Reference the SecretProviderClass
