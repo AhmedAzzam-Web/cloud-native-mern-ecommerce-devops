@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend-deployment
+  namespace: prod
+  labels:
+    app: frontend
+    app.kubernetes.io/component: frontend
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: frontend # for ingress & egress control (network policy)
+      app.kubernetes.io/component: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+        app.kubernetes.io/component: frontend
+    spec:
+      containers:
+        - name: frontend
+          image: REPLACE_WITH_ACR/frontend:REPLACE_WITH_TAG
+
+          ports:
+            - containerPort: 5173
+
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "300m"
+            limits:
+              memory: "900Mi"
+              cpu: "450m"
+
+          # liveness and readiness probes do not start until startup succeeds to not cause interference
+          startupProbe:
+            httpGet:
+              path: /healthz
+              port: 5173
+
+          readinessProbe: # know when a container is ready to start accepting traffic
+            httpGet:
+              path: /healthz
+              port: 5173
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 3
+
+          livenessProbe: # indicate unrecoverable application failure, for example a deadlock.
+            httpGet:
+              path: /healthz
+              port: 5173
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            failureThreshold: 3 # This ensures the pods is observed as a not ready for a period of time before it's hard killed

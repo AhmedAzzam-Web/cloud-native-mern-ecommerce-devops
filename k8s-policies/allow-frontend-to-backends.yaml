@@ -7,6 +7,7 @@ spec:
   podSelector:
     matchLabels:
       app: frontend
+      # becuase network policy is namespace scoped kubectl api-resources will show it
       namespace: prod
   policyTypes:
     - Egress
