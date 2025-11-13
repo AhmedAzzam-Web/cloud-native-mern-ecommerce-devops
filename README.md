@@ -4,8 +4,8 @@
 
 This repository forks a MERN e-commerce application and completely re-architects it for a production-grade deployment on Microsoft Azure. My contributions focus on building a secure, scalable, and fully automated cloud-native infrastructure from the ground up using modern DevOps principles and enterprise-level security.
 
-![Architecture Diagram](docs/images/k8s-policies.drawio.png)
-_Figure 1: a zero-trust networking model is enforced within AKS, ensuring all services are private by default_
+![Architecture Diagram](docs/images/Full-infrastructure.drawio.png)
+_Figure 1: This is the complete infrastructure of the application_
 
 ### Key Features & Technologies
 
@@ -77,6 +77,9 @@ The infrastructure implements a comprehensive zero-trust security model:
 - **Automatic Secret Rotation**: Built-in secret rotation capabilities for enhanced security
 
 #### Zero-Trust Networking
+
+![Architecture Diagram](docs/images/k8s-policies.drawio.png)
+_Figure 3: a zero-trust networking model is enforced within AKS, ensuring all services are private by default_
 
 - **Kubernetes Network Policies**: Deny-by-default network segmentation at the pod level
 - **Micro-segmentation**: Explicit allow rules for required communication paths only
