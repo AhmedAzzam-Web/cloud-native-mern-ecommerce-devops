@@ -18,13 +18,21 @@ spec:
         app: frontend
         app.kubernetes.io/component: frontend
     spec:
+    # run the container as a non-root user to prevent privilege escalation
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 3000
+        fsGroup: 2000
+        # prevent the container from gaining additional privileges
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop: ["ALL"]
       containers:
         - name: frontend
           image: REPLACE_WITH_ACR/frontend:REPLACE_WITH_TAG
-
           ports:
             - containerPort: 5173
-
+            
           resources:
             requests:
               memory: "512Mi"

@@ -16,10 +16,10 @@ RUN npm ci --frozen-lockfile
 COPY . .
 RUN ["npm", "run", "build"]
 
-FROM nginx:stable-alpine AS production
+FROM nginxinc/nginx-unprivileged:stable-alpine AS production
 COPY --from=builder /app/dist /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/conf.d/default.conf
-EXPOSE 80
-# Alpine includes wget
-HEALTHCHECK --interval=30s --timeout=3s CMD wget -qO- http://localhost/ || exit 1
+HEALTHCHECK --interval=30s --timeout=3s CMD wget -qO- http://localhost:5173/ || exit 1
+USER nginx # nginx is the default user in the nginxinc/nginx-unprivileged image
+EXPOSE 5173
 ENTRYPOINT ["nginx", "-g", "daemon off;"]

@@ -32,8 +32,8 @@ module "vnet" {
   # Private Endpoints, securely access a public Azure PaaS service (like ACR) from your private network through azure private link and private DNS
   subnets = {
     "aks" = {
-      name                              = "subnet1 for aks"
-      address_prefixes                  = ["10.0.0.0/20"]
+      name             = "subnet1 for aks"
+      address_prefixes = ["10.0.0.0/20"]
     }
     # This app subnet consumes private_endpoint_network_policies so we disable NSGs and UDRs to avoid conflicts
     "app" = {
@@ -42,19 +42,27 @@ module "vnet" {
       private_endpoint_network_policies = "Disabled" # to prevent policies from affecting outbound to Private Endpoints
     }
     "private-endpoints" = {
-      name                              = "subnet3 for private-endpoints services"
-      address_prefixes                  = ["10.0.2.0/24"]
+      name             = "subnet3 for private-endpoints services"
+      address_prefixes = ["10.0.2.0/24"]
     }
     # azure bastion to access aks cluster via private endpoint
     "bastion" = {
-      name                                  = "AzureBastionSubnet"
-      address_prefixes                      = ["10.0.3.0/24"]
+      name             = "AzureBastionSubnet"
+      address_prefixes = ["10.0.3.0/24"]
     }
     # This app-gw subnet is ready to provide Private Link Service to other VNets or external services
-    "app-gw" = {
-      name                                  = "subnet4 for app-gw"
+    "alb_subnet" = {
+      name                                  = "alb_subnet"
       address_prefixes                      = ["10.0.4.0/24"]
-      private_link_service_network_policies = "Disabled"
+      # Delegation means that subnet is delegated to the azure service to manage the subnet
+      # AGFC is managed by microsoft, but it has to join the private network so delegation is required
+      delegation = {
+        name = "delegation"
+        service_delegation = {
+          name    = "Microsoft.ServiceNetworking/trafficControllers"
+          actions = ["Microsoft.Network/virtualNetworks/subnets/join/action"]
+        }
+      }
     }
   }
 }

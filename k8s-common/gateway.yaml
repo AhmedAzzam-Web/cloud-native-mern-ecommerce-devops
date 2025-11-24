@@ -1,0 +1,22 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: alb-gateway
+  namespace: prod
+  annotations:
+    # CRITICAL: This tells the AGFC controller which subnet to use.
+    # You must replace <YOUR_ALB_SUBNET_ID> in CI/CD.
+    alb.networking.azure.io/application-gateway-subnet-id: <YOUR_ALB_SUBNET_ID>
+spec:
+  gatewayClassName: azure-application-gateway-for-containers
+  listeners:
+  - name: http-listener
+    port: 80
+    protocol: HTTP
+    allowedRoutes:
+      namespaces:
+        from: Selector
+        selector:
+          matchLabels:
+            # remember to label your prod namespace for HTTPRoute: kubectl label ns prod shared-gateway-access=true
+            shared-gateway-access: "true"

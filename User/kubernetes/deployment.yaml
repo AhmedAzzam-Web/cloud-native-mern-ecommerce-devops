@@ -18,6 +18,15 @@ spec:
         app: user
         app.kubernetes.io/component: user_profile
     spec:
+      # run the container as a non-root user to prevent privilege escalation
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 3000
+        fsGroup: 2000
+        # prevent the container from gaining additional privileges
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop: ["ALL"]
       serviceAccountName: prod-sa # Use the Service Account linked to the Azure Identity
       containers:
         - name: user

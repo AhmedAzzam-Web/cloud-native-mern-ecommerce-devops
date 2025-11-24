@@ -140,13 +140,8 @@ output "aks_admin_group_object_id" {
   value       = azuread_group.admin_group.object_id
 }
 
-# Public IP for DNS configuration
-output "appgw_public_ip_address" {
-  description = "The Public IP address of the Azure Application Gateway."
-  value       = azurerm_public_ip.appgw_pip.ip_address
-}
-
-output "application_gateway_id" {
-  description = "The Resource ID of the Azure Application Gateway."
-  value       = azurerm_application_gateway.appgw.id
+# Subnet ID for AGFC controller to be used in the gateway.yaml
+output "alb_subnet_id" {
+  description = "The Resource ID of the subnet used for Application Gateway for Containers."
+  value       = module.vnet.subnets["alb_subnet"].resource_id
 }
