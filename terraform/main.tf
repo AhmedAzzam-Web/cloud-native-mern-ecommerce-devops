@@ -2,7 +2,6 @@
 
 locals {
   suffix               = random_string.random.result
-  service_account_name = "prod-sa"
   namespace            = "prod"
 }
 

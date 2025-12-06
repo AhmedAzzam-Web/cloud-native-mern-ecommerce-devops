@@ -93,35 +93,45 @@ output "bastion_subnet_id" {
 # Private DNS zones to search for vnet link issues: VNet is not correctly linked to the Private DNS Zone issue.
 output "private_dns_zone_aks_name" {
   description = "The name of the private DNS zone for AKS."
-  value       = module.pe_aks.private_dns_zone_name # Assuming module outputs this
+  value       = module.private_endpoints["aks"].private_dns_zone_name # Assuming module outputs this
 }
 
 output "private_dns_zone_acr_name" {
   description = "The name of the private DNS zone for ACR."
-  value       = module.pe_acr.private_dns_zone_name
+  value       = module.private_endpoints["acr"].private_dns_zone_name
 }
 
 output "private_dns_zone_redis_name" {
   description = "The name of the private DNS zone for Redis Cache."
-  value       = module.pe_redis.private_dns_zone_name
+  value       = module.private_endpoints["redis"].private_dns_zone_name
 }
 
 output "private_dns_zone_cosmosdb_name" {
   description = "The name of the private DNS zone for Cosmos DB."
-  value       = module.pe_cosmosdb.private_dns_zone_name
+  value       = module.private_endpoints["cosmosdb"].private_dns_zone_name
 }
 
 output "private_dns_zone_keyvault_name" {
   description = "The name of the private DNS zone for Key Vault."
-  value       = module.pe_kv.private_dns_zone_name
+  value       = module.private_endpoints["key_vault"].private_dns_zone_name
 }
 
 
 # --- Identity Outputs ---
 
-output "app_identity_principal_id" {
-  description = "The Principal ID of the User-Assigned Identity for application pods (used for Workload Identity)."
-  value       = azurerm_user_assigned_identity.app_identity.principal_id
+output "cart_identity_client_id" {
+  description = "The client ID of the User-Assigned Identity for cart pods (used for Workload Identity)."
+  value       = azurerm_user_assigned_identity.services["cart-sa"].client_id
+}
+
+output "user_identity_client_id" {
+  description = "The client ID of the User-Assigned Identity for user pods (used for Workload Identity)."
+  value       = azurerm_user_assigned_identity.services["user-sa"].client_id
+}
+
+output "product_identity_client_id" {
+  description = "The client ID of the User-Assigned Identity for product pods (used for Workload Identity)."
+  value       = azurerm_user_assigned_identity.services["prodcut-sa"].client_id
 }
 
 output "registry_uai_client_id" {

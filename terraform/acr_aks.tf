@@ -164,27 +164,3 @@ resource "azurerm_role_assignment" "aks_acr_pull" {
   skip_service_principal_aad_check = true # Assign this role even if the principal isn’t visible in AAD right now.
   # The flag ensures the apply doesn’t fail if the identity isn’t immediately recognized in Azure AD.
 }
-
-# Create a user assigned identity for the pods to access the vault secret
-resource "azurerm_user_assigned_identity" "app_identity" {
-  name                = "identity-app-${local.suffix}"
-  location            = azurerm_resource_group.rg.location
-  resource_group_name = azurerm_resource_group.rg.name
-}
-# Grant the New Identity Access to Key Vault
-resource "azurerm_role_assignment" "app_identity_kv_access" {
-  scope                = azurerm_key_vault.kv.id
-  role_definition_name = "Key Vault Secrets User"
-  principal_id         = azurerm_user_assigned_identity.app_identity.principal_id
-}
-
-# It links the Azure identity to the Kubernetes SA.
-resource "azurerm_federated_identity_credential" "app_fic" {
-  name                = "fic-app-${local.suffix}"
-  resource_group_name = azurerm_resource_group.rg.name
-  audience            = ["api://AzureADTokenExchange"]
-  issuer              = azurerm_kubernetes_cluster.aks.oidc_issuer_url
-  parent_id           = azurerm_user_assigned_identity.app_identity.id
-  # Service Account my-prod-sa issues an OIDC token when the pod starts
-  subject = "system:serviceaccount:${local.namespace}:${local.service_account_name}"
-}
