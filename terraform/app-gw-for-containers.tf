@@ -35,9 +35,9 @@ resource "azurerm_role_assignment" "alb_subnet_join" {
 
 resource "helm_release" "alb_controller" {
   name             = "alb-controller"
-  repository       = "oci://mcr.microsoft.com/application-lb/charts/alb-controller"
+  repository       = "oci://mcr.microsoft.com/application-lb/charts"
   chart            = "alb-controller"
-  version          = "1.0.2" # Verify latest version
+  version          = "1.3.7"
   namespace        = "azure-alb-system"
   create_namespace = true
 

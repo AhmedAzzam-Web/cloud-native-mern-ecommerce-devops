@@ -1,0 +1,72 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "backend-service.fullname" . }}
+  labels:
+    {{- include "backend-service.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "backend-service.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "backend-service.selectorLabels" . | nindent 8 }}
+        azure.workload.identity/use: "true" # trigger mutation and necessary for the pods to authenticate with Azure AD.
+    spec:
+      serviceAccountName: {{ .Values.serviceAccount.name }}
+      securityContext: 
+        {{- toYaml .Values.securityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.targetPort }}
+              protocol: TCP
+          
+          # Inject Environment Variables dynamically
+          env:
+            {{- toYaml .Values.env | nindent 12 }}
+
+          # Setup for Secrets Store CSI Driver (Volume Mounts)
+          {{- with .Values.volumeMounts }}
+          volumeMounts:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+
+          # liveness and readiness probes do not start until startup succeeds to not cause interference
+          startupProbe:
+            httpGet:
+              path: /healthz
+              port: 9000
+
+          readinessProbe: # know when a container is ready to start accepting traffic
+            httpGet:
+              path: /healthz
+              port: 9000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 3
+
+          livenessProbe: # indicate unrecoverable application failure, for example a deadlock.
+            httpGet:
+              path: /healthz
+              port: 9000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            failureThreshold: 3 # This ensures the pods is observed as a not ready for a period of time before it's hard killed
+
+      # Setup for Secrets Store CSI Driver (Volumes)
+      {{- with .Values.volumes }}
+      volumes:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

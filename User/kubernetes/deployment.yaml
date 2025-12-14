@@ -17,6 +17,7 @@ spec:
       labels:
         app: user
         app.kubernetes.io/component: user_profile
+        azure.workload.identity/use: "true"
     spec:
       # run the container as a non-root user to prevent privilege escalation
       securityContext:
@@ -33,12 +34,19 @@ spec:
           image: REPLACE_WITH_ACR/user:REPLACE_WITH_TAG
 
           env:
-            - name: REDIS_CONNECTION_STRING_PATH
-              value: "/mnt/secrets-store/redis-conn-string" # Pass the file path as an env var
-            - name: COSMOS_CONNECTION_STRING_PATH
-              value: "/mnt/secrets-store/cosmos-conn-string" # Pass the file path as an env var
+            - name: REDIS_CONNECTION_STRING
+              valueFrom:
+                secretKeyRef:
+                  name: app-connection-secrets # The name of the resulting Kubernetes Secret
+                  key: REDIS_CONNECTION_STRING # The key in the Kubernetes Secret
+            - name: COSMOS_CONNECTION_STRING
+              valueFrom:
+                secretKeyRef:
+                  name: app-connection-secrets # The name of the resulting Kubernetes Secret
+                  key: COSMOS_CONNECTION_STRING # The key in the Kubernetes Secret
           volumeMounts: # volume inside the pod
             - name: secrets-volume
+            # secrets will appear here as files
               mountPath: "/mnt/secrets-store"
               readOnly: true
 
@@ -79,7 +87,7 @@ spec:
       volumes:
         - name: secrets-volume
           csi:
-            driver: secrets-store.csi.x-k8s.io
+            driver: secrets-store.csi.k8s.io
             readOnly: true
             volumeAttributes:
               secretProviderClass: "azure-kv-secrets" # Reference the SecretProviderClass

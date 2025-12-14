@@ -1,0 +1,63 @@
+replicaCount: 3
+
+image:
+  repository: REPLACE_WITH_ACR_LOGIN_SERVER/user
+  pullPolicy: IfNotPresent
+
+# This section builds out the service account more information can be found here: https://kubernetes.io/docs/concepts/security/service-accounts/
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 9001
+
+autoscaling:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 85
+  targetMemoryUtilizationPercentage: 80
+
+serviceAccount:
+  create: true
+  name: user-sa
+  # Automatically mount a ServiceAccount's API credentials?
+  automount: true
+  clientId: "CHANGE_IN_CI_CD"
+
+securityContext:
+  capabilities:
+    drop:
+    - ALL
+  readOnlyRootFilesystem: true
+  allowPrivilegeEscalation: false
+  runAsNonRoot: true
+  runAsUser: 1000
+
+env:
+  - name: NODE_ENV
+    value: "production"
+  - name: REDIS_CONNECTION_STRING
+    valueFrom:
+      secretKeyRef:
+        name: app-connection-secrets # The name of the resulting Kubernetes Secret
+        key: REDIS_CONNECTION_STRING # The key in the Kubernetes Secret
+  - name: COSMOS_CONNECTION_STRING
+    valueFrom:
+      secretKeyRef:
+        name: app-connection-secrets # The name of the resulting Kubernetes Secret
+        key: COSMOS_CONNECTION_STRING # The key in the Kubernetes Secret
+
+# CSI Driver Config
+volumes:
+  - name: secrets-volume
+    csi:
+      driver: secrets-store.csi.k8s.io
+      readOnly: true
+      volumeAttributes:
+        secretProviderClass: "azure-kv-secrets-user"
+
+# Volume inside the pod
+volumeMounts:
+  - name: secrets-volume
+    mountPath: "/mnt/secrets-store"
+    readOnly: true
