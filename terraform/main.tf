@@ -49,7 +49,6 @@ module "vnet" {
       name             = "AzureBastionSubnet"
       address_prefixes = ["10.0.3.0/24"]
     }
-    # This app-gw subnet is ready to provide Private Link Service to other VNets or external services
     "alb_subnet" = {
       name                                  = "alb_subnet"
       address_prefixes                      = ["10.0.4.0/24"]
