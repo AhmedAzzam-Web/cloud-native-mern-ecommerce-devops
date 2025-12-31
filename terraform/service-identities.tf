@@ -7,7 +7,6 @@ locals {
 }
 
 # Create a user assigned identity (principal ID) for each micro-service to access the vault secret
-# Create Managed Identities for ALL microservices
 resource "azurerm_user_assigned_identity" "services" {
   for_each            = local.services
   name                = "${each.key}-identity-${local.suffix}"

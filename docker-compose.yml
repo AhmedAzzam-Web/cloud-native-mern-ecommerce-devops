@@ -24,9 +24,13 @@ services:
       - app-network
 
   user:
-    build: 
+    build:
       context: ./User
       target: dev
+    ulimits:
+      nofile:
+        soft: 65535
+        hard: 65535
     container_name: user-service
     restart: unless-stopped
     ports:
@@ -48,9 +52,13 @@ services:
     command: npm run dev
 
   cart:
-    build: 
+    build:
       context: ./Cart
       target: dev
+    ulimits:
+      nofile:
+        soft: 65535
+        hard: 65535
     container_name: cart-service
     restart: unless-stopped
     ports:
@@ -70,9 +78,13 @@ services:
     command: npm run dev
 
   product:
-    build: 
+    build:
       context: ./Product
       target: dev
+    ulimits:
+      nofile:
+        soft: 65535
+        hard: 65535
     container_name: product-service
     restart: unless-stopped
     ports:
@@ -92,9 +104,13 @@ services:
     command: npm run dev
 
   frontend:
-    build: 
+    build:
       context: ./front-end
       target: dev
+    ulimits:
+      nofile:
+        soft: 65535
+        hard: 65535
     container_name: frontend
     restart: unless-stopped
     ports:
@@ -119,4 +135,3 @@ networks:
 
 volumes:
   mongodb_data:
-  

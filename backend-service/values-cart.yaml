@@ -21,7 +21,7 @@ serviceAccount:
   name: cart-sa
   # Automatically mount a ServiceAccount's API credentials?
   automount: true
-  clientId: "CHANGE_IN_CI_CD"
+  clientId: ""
 
 securityContext:
   capabilities:
@@ -32,31 +32,26 @@ securityContext:
   runAsNonRoot: true
   runAsUser: 1000
 
-env:
-  - name: NODE_ENV
-    value: "production"
-  - name: REDIS_CONNECTION_STRING
-    valueFrom:
-      secretKeyRef:
-        name: app-connection-secrets # The name of the resulting Kubernetes Secret
-        key: REDIS_CONNECTION_STRING # The key in the Kubernetes Secret
-  - name: COSMOS_CONNECTION_STRING
-    valueFrom:
-      secretKeyRef:
-        name: app-connection-secrets # The name of the resulting Kubernetes Secret
-        key: COSMOS_CONNECTION_STRING # The key in the Kubernetes Secret
+resources:
+  requests:
+    memory: "512Mi"
+    cpu: "300m"
+  limits:
+    memory: "900Mi"
+    cpu: "450m"
 
-# CSI Driver Config
-volumes:
-  - name: secrets-volume
-    csi:
-      driver: secrets-store.csi.k8s.io
-      readOnly: true
-      volumeAttributes:
-        secretProviderClass: "azure-kv-secrets"
+secretProvider:
+  keyvaultName: azure-kv-secrets
+  tenantID: ""
+  secretName: app-connection-secrets # The name of the resulting Kubernetes Secret
+  secrets:
+    - remoteName: redis-conn-string
+      envKey: REDIS_CONNECTION_STRING
+    - remoteName: cosmos-conn-string
+      envKey: COSMOS_CONNECTION_STRING
 
-# Volume inside the pod
-volumeMounts:
-  - name: secrets-volume
-    mountPath: "/mnt/secrets-store"
-    readOnly: true
+probes:
+  initialDelaySeconds: 5
+  periodSeconds: 10
+  timeoutSeconds: 2
+  failureThreshold: 3 

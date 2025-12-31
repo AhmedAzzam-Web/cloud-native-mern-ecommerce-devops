@@ -17,7 +17,9 @@ spec:
         {{- include "backend-service.selectorLabels" . | nindent 8 }}
         azure.workload.identity/use: "true" # trigger mutation and necessary for the pods to authenticate with Azure AD.
     spec:
-      serviceAccountName: {{ .Values.serviceAccount.name }}
+      serviceAccountName: {{ include "backend-service.serviceAccountName" . }}
+      # Automatically mount a ServiceAccount's API credentials, meaning the pod will run kubectl commands on the cluster which is a security risk
+      automountServiceAccountToken: {{ .Values.serviceAccount.automount }}
       securityContext: 
         {{- toYaml .Values.securityContext | nindent 8 }}
       containers:
@@ -31,13 +33,22 @@ spec:
           
           # Inject Environment Variables dynamically
           env:
-            {{- toYaml .Values.env | nindent 12 }}
+          - name: NODE_ENV
+            value: "production"
+        {{- range .Values.secretProvider.secrets }}
+          - name: {{ .envKey }}
+            valueFrom:
+              secretKeyRef:
+              # $sign ,represents absoluate path which always points to root, is used for the current context since inside the range loop, we are in a list context
+                name: {{ $.Values.secretProvider.secretName }}
+                key: {{ .envKey }}
+        {{- end }}
 
           # Setup for Secrets Store CSI Driver (Volume Mounts)
-          {{- with .Values.volumeMounts }}
           volumeMounts:
-            {{- toYaml . | nindent 12 }}
-          {{- end }}
+          - name: secrets-volume
+            mountPath: "/mnt/secrets-store"
+            readOnly: true
 
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
@@ -46,27 +57,30 @@ spec:
           startupProbe:
             httpGet:
               path: /healthz
-              port: 9000
+              port: {{ .Values.service.targetPort }}
 
           readinessProbe: # know when a container is ready to start accepting traffic
             httpGet:
               path: /healthz
-              port: 9000
-            initialDelaySeconds: 5
-            periodSeconds: 10
-            timeoutSeconds: 2
-            failureThreshold: 3
+              port: {{ .Values.service.targetPort }}
+            initialDelaySeconds: {{ .Values.probes.initialDelaySeconds | default 5 }}
+            periodSeconds: {{ .Values.probes.periodSeconds | default 10 }}
+            timeoutSeconds: {{ .Values.probes.timeoutSeconds | default 2 }}
+            failureThreshold: {{ .Values.probes.failureThreshold | default 3 }}
 
           livenessProbe: # indicate unrecoverable application failure, for example a deadlock.
             httpGet:
               path: /healthz
-              port: 9000
-            initialDelaySeconds: 5
-            periodSeconds: 10
-            failureThreshold: 3 # This ensures the pods is observed as a not ready for a period of time before it's hard killed
+              port: {{ .Values.service.targetPort }}
+            initialDelaySeconds: {{ .Values.probes.initialDelaySeconds | default 5 }}
+            periodSeconds: {{ .Values.probes.periodSeconds | default 10 }}
+            failureThreshold: {{ .Values.probes.failureThreshold | default 3 }} # This ensures the pods is observed as a not ready for a period of time before it's hard killed
 
       # Setup for Secrets Store CSI Driver (Volumes)
-      {{- with .Values.volumes }}
       volumes:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
+        - name: secrets-volume
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: {{ include "backend-service.fullname" . }}-secrets

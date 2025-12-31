@@ -16,7 +16,7 @@ resource "azurerm_federated_identity_credential" "azure-alb-identity" {
   issuer              = azurerm_kubernetes_cluster.aks.oidc_issuer_url
   parent_id           = azurerm_user_assigned_identity.azure-alb-identity.id
   # The naming of subject is a must for the AGFC controller to work. The official ALB Helm chart defaults the Service Account name to alb-controller-sa
-  subject             = "system:serviceaccount:azure-alb-system:alb-controller-sa"
+  subject = "system:serviceaccount:azure-alb-system:alb-controller-sa"
 }
 
 # This allows the controller to Create/Update the AGFC resource in the Resource Group
@@ -31,31 +31,4 @@ resource "azurerm_role_assignment" "azure-alb-subnet-join" {
   scope                = module.vnet.subnets["alb_subnet"].resource_id
   role_definition_name = "Network Contributor"
   principal_id         = azurerm_user_assigned_identity.azure-alb-identity.principal_id
-}
-
-resource "helm_release" "alb_controller" {
-  name             = "alb-controller"
-  repository       = "oci://mcr.microsoft.com/application-lb/charts"
-  chart            = "alb-controller"
-  version          = "1.3.7"
-  namespace        = "azure-alb-system"
-  create_namespace = true
-
-  # Pass the Client ID of the identity we created above
-  set = [
-    {
-      name  = "albController.podIdentity.clientID"
-      value = azurerm_user_assigned_identity.azure-alb-identity.client_id
-    },
-    {
-      name  = "albController.podIdentity.enabled"
-      value = "true"
-    }
-  ]
-  depends_on = [
-    azurerm_federated_identity_credential.azure-alb-identity,
-    azurerm_role_assignment.azure-alb-subnet-join,
-    azurerm_role_assignment.azure-alb-contributor,
-    azurerm_kubernetes_cluster_node_pool.userpool # to ensure the node pool is created before the controller is deployed
-  ]
 }

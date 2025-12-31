@@ -7,6 +7,8 @@ metadata:
     # CRITICAL: This tells the AGFC controller which subnet to use.
     # You must replace <YOUR_ALB_SUBNET_ID> in CI/CD.
     alb.networking.azure.io/application-gateway-subnet-id: <YOUR_ALB_SUBNET_ID>
+    alb.networking.azure.io/alb-namespace: prod
+    alb.networking.azure.io/alb-name: alb-gateway
 spec:
   # The gatewayClassName determines which controller will handle traffic for the gateway, naming is a must
   gatewayClassName: azure-application-gateway-for-containers
