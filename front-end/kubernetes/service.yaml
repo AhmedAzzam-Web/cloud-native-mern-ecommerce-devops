@@ -15,5 +15,5 @@ spec:
   ports:
   - name: frontend-service
     protocol: TCP
-    port: 80 # the port the service is listening on externally
-    targetPort: 5173 # the port the container is listening on internally
+    port: 80 # the port the service is listening on externally (Gateway)
+    targetPort: 8080 # the port the container is listening on internally (Container)

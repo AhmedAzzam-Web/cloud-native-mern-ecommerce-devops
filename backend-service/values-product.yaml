@@ -31,7 +31,8 @@ securityContext:
   readOnlyRootFilesystem: true
   allowPrivilegeEscalation: false
   runAsNonRoot: true
-  runAsUser: 1000
+  runAsUser: 65532
+  runAsGroup: 65532
 
 resources:
   requests:
@@ -56,3 +57,7 @@ probes:
   periodSeconds: 10
   timeoutSeconds: 2
   failureThreshold: 3 
+
+# Some Fixes
+nameOverride: product
+fullnameOverride: product

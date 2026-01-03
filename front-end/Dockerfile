@@ -20,6 +20,6 @@ FROM nginxinc/nginx-unprivileged:stable-alpine AS production
 COPY --from=builder /app/dist /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 HEALTHCHECK --interval=30s --timeout=3s CMD wget -qO- http://localhost:5173/ || exit 1
-USER nginx # nginx is the default user in the nginxinc/nginx-unprivileged image
-EXPOSE 5173
+# nginx is the default user in the nginxinc/nginx-unprivileged image
+EXPOSE 8080
 ENTRYPOINT ["nginx", "-g", "daemon off;"]

@@ -1,0 +1,3 @@
+**/templates/*.yaml
+**/templates/*.tpl
+backend-service/templates/
