@@ -21,11 +21,13 @@ spec:
       # Automatically mount a ServiceAccount's API credentials, meaning the pod will run kubectl commands on the cluster which is a security risk
       automountServiceAccountToken: {{ .Values.serviceAccount.automount }}
       securityContext: 
-        {{- toYaml .Values.securityContext | nindent 8 }}
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
         - name: {{ .Chart.Name }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          securityContext: 
+            {{- toYaml .Values.securityContext | nindent 12 }}
           ports:
             - name: http
               containerPort: {{ .Values.service.targetPort }}

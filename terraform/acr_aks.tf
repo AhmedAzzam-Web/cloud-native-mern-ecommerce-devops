@@ -66,6 +66,19 @@ resource "azuread_group" "admin_group" {
   security_enabled = true
 }
 
+resource "azurerm_private_dns_zone" "aks_private_dns_zone" {
+  name                = "privatelink.${azurerm_resource_group.rg.location}.azmk8s.io"
+  resource_group_name = azurerm_resource_group.rg.name
+}
+
+# link the zone to VNet
+resource "azurerm_private_dns_zone_virtual_network_link" "aks_dns_link" {
+  name                  = "aks-vnet-link"
+  resource_group_name   = azurerm_resource_group.rg.name
+  private_dns_zone_name = azurerm_private_dns_zone.aks_private_dns_zone.name
+  virtual_network_id    = module.vnet.resource_id
+}
+
 resource "azurerm_kubernetes_cluster" "aks" {
   name                = "aks-${var.project_name}-${local.suffix}"
   location            = azurerm_resource_group.rg.location
@@ -158,9 +171,17 @@ resource "azurerm_kubernetes_cluster_node_pool" "userpool" {
 }
 
 resource "azurerm_role_assignment" "aks_acr_pull" {
+  # kubelet_identity is AKS cluster infra used to pull images from the ACR
   principal_id                     = azurerm_kubernetes_cluster.aks.kubelet_identity[0].object_id
   role_definition_name             = "AcrPull"
   scope                            = azurerm_container_registry.acr.id
   skip_service_principal_aad_check = true # Assign this role even if the principal isn’t visible in AAD right now.
   # The flag ensures the apply doesn’t fail if the identity isn’t immediately recognized in Azure AD.
+}
+# manage the private DNS zone not the VNet it's linked to
+resource "azurerm_role_assignment" "aks_dns_contributor" {
+  scope                = azurerm_private_dns_zone.aks_private_dns_zone.id
+  role_definition_name = "Private DNS Zone Contributor"
+  # aks cluster identity (control plane) manages creation of load balancers, public IPs, etc.
+  principal_id         = azurerm_kubernetes_cluster.aks.identity[0].principal_id
 }

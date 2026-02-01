@@ -5,3 +5,13 @@ metadata:
   labels:
     name: prod
     app.kubernetes.io/part-of: app
+    # Pod Security Policies to enforce non-root containers and no privileged containers especially ephemeral containers the ones created with kubectl debug command
+    # PSA works at cluster level
+    # audit mode log the action, but allow it to continue
+    # warn mode notify the developer before proceeding
+    # enforce mode block the action
+    # pod-security.kubernetes.io/audit: restricted
+    # pod-security.kubernetes.io/audit-version: latest
+    # pod-security.kubernetes.io/warn: restricted
+    # pod-security.kubernetes.io/warn-version: latest
+    shared-gateway-access: "true" # for the gateway in another namespace to access the namespace

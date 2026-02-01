@@ -23,6 +23,13 @@ serviceAccount:
   automount: true
   clientId: ""
 
+# This is for setting Kubernetes Security Context to a Pod (volume ownership).
+podSecurityContext:
+  fsGroup: 65532
+  seccompProfile:
+    type: RuntimeDefault
+  
+# This is for setting Kubernetes Security Context to a Container.
 securityContext:
   capabilities:
     drop:
@@ -31,7 +38,8 @@ securityContext:
   allowPrivilegeEscalation: false
   runAsNonRoot: true
   runAsUser: 65532
-  runAsGroup: 65532
+  runAsGroup: 65532 # Standard Distroless non-root user
+  fsGroup: 65532 # Change ownership of the volumes and file system to the non-root user
 
 resources:
   requests:

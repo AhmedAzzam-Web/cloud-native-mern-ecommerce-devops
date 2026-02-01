@@ -1,7 +1,7 @@
 locals {
   services = {
-    cart = "cart-sa"
-    user = "user-sa"
+    cart    = "cart-sa"
+    user    = "user-sa"
     product = "product-sa"
   }
 }
@@ -15,7 +15,7 @@ resource "azurerm_user_assigned_identity" "services" {
 }
 # Grant the New Identity Access to Key Vault
 resource "azurerm_role_assignment" "services" {
-  for_each            = local.services
+  for_each             = local.services
   scope                = azurerm_key_vault.kv.id
   role_definition_name = "Key Vault Secrets User"
   principal_id         = azurerm_user_assigned_identity.services[each.key].principal_id

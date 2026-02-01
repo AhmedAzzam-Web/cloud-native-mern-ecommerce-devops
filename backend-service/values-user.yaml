@@ -33,7 +33,10 @@ securityContext:
   runAsNonRoot: true
   runAsUser: 65532
   runAsGroup: 65532
-
+  fsGroup: 65532 # Change ownership of the volumes and file system to the non-root user
+  seccompProfile:
+    type: RuntimeDefault # Use the default seccomp profile for the container runtime
+    # More information can be found here: https://kubernetes.io/docs/concepts/security/pod-security-policy/#seccomp
 
 resources:
   requests:

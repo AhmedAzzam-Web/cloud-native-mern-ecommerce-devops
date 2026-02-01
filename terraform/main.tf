@@ -1,8 +1,8 @@
 # Core azure resources: RG, ACR, AKS, Module(VNET, Subnet), Redis_cache, Cosmos_DB_for_MongoDB
 
 locals {
-  suffix               = random_string.random.result
-  namespace            = "prod"
+  suffix    = random_string.random.result
+  namespace = "prod"
 }
 
 resource "random_string" "random" {
@@ -50,17 +50,18 @@ module "vnet" {
       address_prefixes = ["10.0.3.0/24"]
     }
     "alb_subnet" = {
-      name                                  = "alb_subnet"
-      address_prefixes                      = ["10.0.4.0/24"]
+      name             = "alb_subnet"
+      address_prefixes = ["10.0.4.0/24"]
       # Delegation means that subnet is delegated to the azure service to manage the subnet
       # AGFC is managed by microsoft, but it has to join the private network so delegation is required
-      delegation = {
-        name = "delegation"
-        service_delegation = {
-          name    = "Microsoft.ServiceNetworking/trafficControllers"
-          actions = ["Microsoft.Network/virtualNetworks/subnets/join/action"]
+      delegations = [
+        {
+          name = "Microsoft.ServiceNetworking/trafficControllers"
+          service_delegation = {
+            name = "Microsoft.Network/virtualNetworks/subnets/join/action"
+          }
         }
-      }
+      ]
     }
   }
 }

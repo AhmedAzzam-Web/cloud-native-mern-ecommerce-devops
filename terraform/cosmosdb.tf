@@ -1,4 +1,3 @@
-
 resource "azurerm_cosmosdb_account" "acc" {
   name                          = var.cosmos_db_account_name
   location                      = azurerm_resource_group.rg.location
