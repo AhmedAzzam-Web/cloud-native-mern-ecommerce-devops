@@ -1,0 +1,93 @@
+name: Infrastructure Provisioning
+
+on:
+  push:
+    branches: [main]
+    paths: [terraform/**]
+  workflow_dispatch:
+
+defaults:
+  run:
+    working-directory: ./terraform
+
+jobs:
+  provision:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write # Required for OIDC
+      contents: read # Required to checkout code
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.9.1"
+
+      - name: Azure Login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Check and Bootstrap Backend
+        id: bootstrap
+        # This is the OIDC token for the Azure CLI. Terraform's azurerm provider
+        env:
+          ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          # This will tell terraform to not search for secrets, instead look for OIDC token in the env.
+          ARM_USE_OIDC: true
+        run: |
+          # 1. Check if the storage account already exists using Azure CLI
+          RG_NAME="tfstate"
+          STORAGE_NAME="tfstateprodinfrastructure123"
+          CONTAINER_NAME="prodinfra"
+
+          if az storage account show --name $STORAGE_NAME --resource-group $RG_NAME >/dev/null 2>&1; then
+            echo "✅ Backend storage already exists. Skipping bootstrap."
+            echo "bootstrap_needed=false" >> $GITHUB_OUTPUT
+          else
+            echo "⚠️ Backend storage missing. Starting bootstrap..."
+            echo "bootstrap_needed=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Initialize Terraform
+        if: steps.bootstrap.outputs.bootstrap_needed == 'true'
+        run: terraform init -backend=false
+
+      - name: Create Backend Resources
+        if: steps.bootstrap.outputs.bootstrap_needed == 'true'
+        run: |
+          terraform apply \
+            -target=azurerm_resource_group.tfstate \
+            -target=azurerm_storage_account.tfstate \
+            -target=azurerm_storage_container.tfstate \
+            -auto-approve
+
+      - name: Initialize Terraform (Standard Mode)
+        # If we just bootstrapped, this migrates state. If not, it just connects.
+        run: |
+          if [ "${{ steps.bootstrap.outputs.bootstrap_needed }}" == "true" ]; then
+            terraform init -migrate-state -force-copy
+          else
+            terraform init
+          fi
+
+      - name: Terraform Plan
+        run: terraform plan -out=tfplan
+
+      - name: Terraform Apply
+        run: terraform apply -auto-approve tfplan
+
+      - name: Save Outputs to GitHub Variables
+        env:
+          GH_TOKEN: ${{ secrets.ACTIONS_PAT }}
+        run: |
+          gh variable set ACR_LOGIN_SERVER --body "$(terraform output -raw acr_login_server)"
+          gh variable set AKS_NAME --body "$(terraform output -raw aks_cluster_name)"
+          gh variable set RESOURCE_GROUP_NAME --body "$(terraform output -raw resource_group_name)"

@@ -17,8 +17,8 @@ terraform {
 
   backend "azurerm" {
     resource_group_name  = "tfstate"
-    storage_account_name = "tfstate_prod_infrastructure"
-    container_name       = "tfstate"
+    storage_account_name = "tfstateprodinfrastructure123"
+    container_name       = "prodinfra"
     key                  = "prod.terraform.tfstate" # you decide this value not default to a name haha, save the state in this file
   }
 }
