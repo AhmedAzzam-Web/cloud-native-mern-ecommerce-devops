@@ -64,8 +64,8 @@ This project implements the cutting-edge **Azure Application Gateway for Contain
 - **Automated Lifecycle**: The entire AGFC infrastructure is automated using Terraform and Helm.
 - **Traffic Splitting**: Capability for advanced routing scenarios like canary deployments and A/B testing.
 
-📖 Read the detailed implementation guide on Medium: [Automating Azure Application Gateway for Containers (AGFC) with AKS, Terraform, Helm & CI/CD]([https://medium.com](https://medium.com/@ahmedazzam.business/automating-azure-application-gateway-for-containers-agfc-with-aks-terraform-helm-ci-cd-2974795432d2))
-
+📖 **Read the detailed implementation guide on Medium:**
+[Automating Azure Application Gateway for Containers (AGFC) with AKS, Terraform, Helm & CI/CD](https://medium.com/@ahmedazzam.business/automating-azure-application-gateway-for-containers-agfc-with-aks-terraform-helm-ci-cd-2974795432d2)
 ### Security Posture (Zero-Trust by Design)
 
 The infrastructure implements a comprehensive zero-trust security model:
