@@ -1,0 +1,106 @@
+name: CI/CD for Product Service
+
+on:
+  push:
+    branches: [main]
+    paths: [Product/**]
+  pull_request:
+    branches: [main]
+    paths: [Product/**]
+
+defaults:
+  run:
+    working-directory: ./Product
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+
+    permissions:
+      security-events: write
+      packages: read
+      actions: read
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Install and test
+        run: |
+          npm ci
+          npm run test
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: javascript-typescript
+          build-mode: none
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+
+      - name: Azure Login using Workload Identity (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Login to Azure Container Registry
+        run: |
+          az acr login --name ${{ vars.ACR_NAME }}
+
+      - name: Build Docker image
+        run: |
+          docker build -t ${{ vars.ACR_NAME }}/product:${{ github.sha }} ./Product
+          docker push ${{ vars.ACR_NAME }}/product:${{ github.sha }}
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@7b7aa264d83dc58691451798b4d117d53d21edfe
+        with:
+          image-ref: "${{ vars.ACR_NAME }}/product:${{ github.sha }}"
+          exit-code: "1"
+          ignore-unfixed: true
+          vuln-type: "os,library"
+          format: "template"
+          template: "@/contrib/sarif.tpl"
+          output: "trivy-results.sarif"
+          severity: "CRITICAL,HIGH"
+
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: "trivy-results.sarif"
+
+  cd:
+    needs: ci
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Azure Login (OIDC)
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Get AKS Credentials
+        run: az aks get-credentials --resource-group ${{ vars.RESOURCE_GROUP_NAME }} --name ${{ vars.AKS_NAME }}
+
+      - name: Deploy with Helm
+        run: |
+          helm upgrade --install product ./backend-service \
+            --values ./backend-service/values-product.yaml \
+            --set image.repository=${{ vars.ACR_LOGIN_SERVER }}/product \
+            --set image.tag=${{ github.sha }} \
+            --namespace prod \
+            --create-namespace
